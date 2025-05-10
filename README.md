@@ -1,6 +1,1 @@
-<<<<<<< HEAD
-# hoare-verification
-A work-in-progress Lean framework for program verification with Hoare Logic. 
-=======
-# HoareVerification
->>>>>>> 02592bc (Initial commit)
+A work-in-progress Lean framework for formal program verification with Hoare Logic, developed in collaboration with Professor Eric Klavins at the University of Washington. 
