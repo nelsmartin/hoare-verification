@@ -1,0 +1,10 @@
+name = "HoareVerification"
+version = "0.1.0"
+defaultTargets = ["hoareverification"]
+
+[[lean_lib]]
+name = "HoareVerification"
+
+[[lean_exe]]
+name = "hoareverification"
+root = "Main"
