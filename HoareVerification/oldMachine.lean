@@ -185,7 +185,9 @@ def comp (T₁ T₂ : State → State) := (λ s => T₂ (T₁ s))
 
 theorem hoare_compose {P R: State → Prop} {T₁ T₂ : State → State}
   : (∃ Q , Hoare P T₁ Q ∧ Hoare Q T₂ R) → Hoare P (comp T₁ T₂) R := by
+    unfold Hoare
     intro ⟨ Q, ⟨ hpq, hqr ⟩ ⟩ s hs
+    let x:= hqr (T₁ s)
     exact hqr (T₁ s) (hpq s hs)
 
 theorem hoare_consequence
@@ -207,9 +209,13 @@ def con_not (P : State → Prop) := λ s => P s → False
 def ite (T₁ T₂ : State → State) (B : State → Prop) [DecidablePred B] :=
   λ s => if B s then T₁ s else T₂ s
 
-theorem hoare_conditional {B P Q: State → Prop} {T₁ T₂ : State → State} [DecidablePred B]
+theorem hoare_conditional
+  {B P Q: State → Prop}
+  {T₁ T₂ : State → State}
+  [DecidablePred B]
   : (Hoare (con_and B P) T₁ Q ∧ Hoare (con_and (con_not B) P) T₂ Q) →
   Hoare P (ite T₁ T₂ B) Q := by
+
     unfold Hoare con_and con_not ite
     intro h s hps
     by_cases hbs : (B s)
