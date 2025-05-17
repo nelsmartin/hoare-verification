@@ -36,6 +36,7 @@ abbrev Program := List Action
 /-
 # INSTRUCTIONS
 -/
+
 /- Let's redo these so that indexes are relative. O is current instruction, 1 is one before, -1 is one behind, ect. -/
 @[simp]
 def set (r val : Nat) : Action := λ s => ⟨
