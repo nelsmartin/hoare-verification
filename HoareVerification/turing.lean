@@ -70,5 +70,122 @@ def run (numSteps : Nat) : TuringMachine → TuringMachine := λ TM =>
 
 def first := run 10 init
 
-/-Change the argument to view the tape. -/
-#eval first.tape 3
+def showTape (TM : TuringMachine) (index : Nat) : String :=
+  let indices := List.range index
+  let cells := indices.map (λ i => TM.tape (Int.ofNat i))
+  String.intercalate ", " cells ++ "..."
+
+-- Example usage:
+def exampleTM := run 20 init
+
+#eval showTape exampleTM 10
+
+end First
+
+namespace Second
+
+
+inductive mc | b
+
+structure TuringMachine where
+  index : Int
+  tape : Int → String
+  currMC : mc
+
+
+
+def init : TuringMachine := ⟨ 0, λ _ => "none", mc.b⟩
+
+
+
+def step : TuringMachine → TuringMachine := λ TM =>
+  let currSymbol := TM.tape TM.index
+  match TM.currMC with
+  | b => if currSymbol = "none" then ⟨ TM.index, λ x => if x = TM.index then "0" else TM.tape x, mc.b⟩
+    else if currSymbol = "0" then ⟨ TM.index + 2, λ x => if x = TM.index + 2 then "1" else TM.tape x, mc.b⟩
+    else if currSymbol = "1" then ⟨ TM.index + 2, λ x => if x = TM.index + 2 then "0" else TM.tape x, mc.b⟩
+    else TM
+
+
+def run (numSteps : Nat) : TuringMachine → TuringMachine := λ TM =>
+  match numSteps with
+  | Nat.zero => TM
+  | Nat.succ k => run k (step TM)
+
+def showTape (TM : TuringMachine) (index : Nat) : String :=
+  let indices := List.range index
+  let cells := indices.map (λ i => TM.tape (Int.ofNat i))
+  String.intercalate ", " cells ++ "..."
+
+-- Example usage:
+def exampleTM := run 20 init
+
+#eval showTape exampleTM 10
+
+end Second
+
+namespace Third
+
+inductive mc where
+| b : mc
+| c : mc
+| e : mc
+| f : mc
+
+
+structure TuringMachine where
+  index : Int
+  tape : Int → String
+  currMC : mc
+
+
+def init : TuringMachine := ⟨ 0, λ _ => "none", mc.b⟩
+
+abbrev Operation := TuringMachine → TuringMachine
+
+def R : Operation := λ TM => ⟨
+  TM.index + 1,
+  TM.tape,
+  TM.currMC
+  ⟩
+
+def L : Operation := λ TM => ⟨
+  TM.index - 1,
+  TM.tape,
+  TM.currMC
+  ⟩
+
+def setMConfig (newMC : mc): Operation := λ TM => ⟨
+  TM.index,
+  TM.tape,
+  newMC
+  ⟩
+
+def P (symbol : String) : Operation := λ TM =>  ⟨
+  TM.index,
+  λ x => if x = TM.index then symbol else TM.tape x,
+  TM.currMC
+  ⟩
+
+def showTape (TM : TuringMachine) (index : Nat) : String :=
+  let indices := List.range index
+  let cells := indices.map (λ i => TM.tape (Int.ofNat i))
+  String.intercalate ", " cells ++ "..."
+
+
+
+def tableOne : Operation := λ TM =>
+  match TM.currMC with
+  | mc.b =>  TM |> P "0" |> R |> setMConfig mc.c
+  | mc.c => TM |> R |> setMConfig mc.e
+  | mc.e => TM |> P "1" |> R |> setMConfig mc.f
+  | mc.f => TM |> R |> setMConfig mc.b
+
+def run (numSteps : Nat) (table : Operation): Operation := λ TM =>
+  match numSteps with
+  | Nat.zero => TM
+  | Nat.succ k => run k table (table TM)
+
+def ex1 : TuringMachine := run 10 tableOne init
+
+#eval showTape ex1 10
