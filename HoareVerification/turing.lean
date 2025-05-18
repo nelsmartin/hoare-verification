@@ -41,88 +41,6 @@ Turing begins by defining calculable numbers as: "those whose decimals are calcu
 /- WORK IN PROGRESS:
 The below turing machine prints "1 blank 0 blank 1 blank ... " on the tape.
 -/
-namespace First
-inductive mc where
-| b : mc
-| c : mc
-| e : mc
-| f : mc
-
-/- Idea: to print things, recurse through indexes -/
-structure TuringMachine where
-  index : Int
-  tape : Int → String
-  thisMC : mc
-
-def init : TuringMachine := ⟨ 0, λ _ => "none", mc.b⟩
-
-def run (numSteps : Nat) : TuringMachine → TuringMachine := λ TM =>
-  match numSteps with
-  | Nat.zero => TM
-  | Nat.succ k =>
-    match TM.thisMC with
-    | mc.b => run k ⟨ TM.index + 1, λ x => if x = TM.index then "0" else TM.tape x, mc.c ⟩
-    | mc.c => run k ⟨ TM.index + 1, λ x => TM.tape x, mc.e ⟩
-    | mc.e => run k ⟨ TM.index + 1, λ x => if x = TM.index then "1" else TM.tape x, mc.f⟩
-    | mc.f => run k ⟨ TM.index + 1, λ x => TM.tape x, mc.b ⟩
-
-/- M-configuration-/
-
-def first := run 10 init
-
-def showTape (TM : TuringMachine) (index : Nat) : String :=
-  let indices := List.range index
-  let cells := indices.map (λ i => TM.tape (Int.ofNat i))
-  String.intercalate ", " cells ++ "..."
-
--- Example usage:
-def exampleTM := run 20 init
-
-#eval showTape exampleTM 10
-
-end First
-
-namespace Second
-
-
-inductive mc | b
-
-structure TuringMachine where
-  index : Int
-  tape : Int → String
-  currMC : mc
-
-
-
-def init : TuringMachine := ⟨ 0, λ _ => "none", mc.b⟩
-
-
-
-def step : TuringMachine → TuringMachine := λ TM =>
-  let currSymbol := TM.tape TM.index
-  match TM.currMC with
-  | b => if currSymbol = "none" then ⟨ TM.index, λ x => if x = TM.index then "0" else TM.tape x, mc.b⟩
-    else if currSymbol = "0" then ⟨ TM.index + 2, λ x => if x = TM.index + 2 then "1" else TM.tape x, mc.b⟩
-    else if currSymbol = "1" then ⟨ TM.index + 2, λ x => if x = TM.index + 2 then "0" else TM.tape x, mc.b⟩
-    else TM
-
-
-def run (numSteps : Nat) : TuringMachine → TuringMachine := λ TM =>
-  match numSteps with
-  | Nat.zero => TM
-  | Nat.succ k => run k (step TM)
-
-def showTape (TM : TuringMachine) (index : Nat) : String :=
-  let indices := List.range index
-  let cells := indices.map (λ i => TM.tape (Int.ofNat i))
-  String.intercalate ", " cells ++ "..."
-
--- Example usage:
-def exampleTM := run 20 init
-
-#eval showTape exampleTM 10
-
-end Second
 
 namespace Third
 
@@ -131,7 +49,6 @@ inductive mc where
 | c : mc
 | e : mc
 | f : mc
-
 
 structure TuringMachine where
   index : Int
@@ -189,3 +106,111 @@ def run (numSteps : Nat) (table : Operation): Operation := λ TM =>
 def ex1 : TuringMachine := run 10 tableOne init
 
 #eval showTape ex1 10
+
+end Third
+
+namespace Fourth
+
+
+
+structure  TuringMachine (mc : Type) where
+  index : Int
+  tape : Int → String
+  currMC : mc
+
+
+def R {mc : Type}: TuringMachine mc → TuringMachine mc := λ TM => ⟨
+  TM.index + 1,
+  TM.tape,
+  TM.currMC
+  ⟩
+
+def L {mc : Type} : TuringMachine mc → TuringMachine mc := λ TM => ⟨
+  TM.index - 1,
+  TM.tape,
+  TM.currMC
+⟩
+
+def P {mc: Type} (symbol : String) : TuringMachine mc → TuringMachine mc := λ TM => ⟨
+  TM.index,
+  λ x => if x = TM.index then symbol else TM.tape x,
+  TM.currMC
+⟩
+
+def E {mc: Type} : TuringMachine mc → TuringMachine mc := λ TM => ⟨
+  TM.index,
+  λ x => if x = TM.index then "none" else TM.tape x,
+  TM.currMC
+⟩
+def setMConfig {mc : Type} (newMC : mc): TuringMachine mc → TuringMachine mc := λ TM => ⟨
+  TM.index,
+  TM.tape,
+  newMC
+⟩
+
+
+
+
+def run {mc : Type} (numSteps : Nat) (table : TuringMachine mc → TuringMachine mc)
+: TuringMachine mc → TuringMachine mc := λ TM =>
+  match numSteps with
+  | Nat.zero => TM
+  | Nat.succ k => run k table (table TM)
+
+def showTape  {mc: Type} (TM : TuringMachine mc) (index : Nat) : String :=
+  let indices := List.range index
+  let cells := indices.map (λ i => TM.tape (Int.ofNat i))
+  String.intercalate ", " cells ++ "..."
+
+inductive mc1 where
+| b : mc1
+| c : mc1
+| e : mc1
+| f : mc1
+
+def tableOne : TuringMachine mc1 → TuringMachine mc1 := λ TM =>
+  match TM.currMC with
+  | mc1.b => TM |> P "0" |> R |> setMConfig mc1.c
+  | mc1.c => TM |> R |> setMConfig mc1.e
+  | mc1.e => TM |> P "1" |> R |> setMConfig mc1.f
+  | mc1.f => TM |> R |> setMConfig mc1.b
+
+
+def init : TuringMachine mc1 := ⟨ 0, λ _ => "none", mc1.b⟩
+
+def ex1 : TuringMachine mc1 := run 10 tableOne init
+
+#eval showTape ex1 10
+
+
+inductive mc2 where | b | o | q | p | f
+
+def tableTwo : TuringMachine mc2 → TuringMachine mc2 := λ TM =>
+  let currSymbol : String := TM.tape TM.index
+
+  match TM.currMC with
+  | mc2.b =>
+      TM |> P "ə" |> R |> P "ə" |> R |> P "0" |> R |> R |> P "0" |> L |> L |> setMConfig mc2.o
+  | mc2.o => if currSymbol = "1" then
+      TM |> R |> P "x" |> L |> L |> L |> setMConfig mc2.o
+    else
+      TM |> setMConfig mc2.q
+  | mc2.q => if currSymbol = "0" ∨ currSymbol = "1" then
+      TM |> R |> R |> setMConfig mc2.q
+    else
+      TM |> P "1" |> L |> setMConfig mc2.p
+  | mc2.p => if currSymbol = "x" then
+      TM |> E |> R |> setMConfig mc2.q
+    else if currSymbol = "ə" then
+      TM |> R |> setMConfig mc2.f
+    else
+      TM |> L |> L |> setMConfig mc2.p
+  | mc2.f => if currSymbol = "none" then
+      TM |> P "0" |> L |> L |> setMConfig mc2.o
+    else
+      TM |> R |> R |> setMConfig mc2.f
+
+
+def init2 : TuringMachine mc2 := ⟨ 0, λ _ => "none", mc2.b ⟩
+def ex2 : TuringMachine mc2 := run 1000 tableTwo init2
+#eval showTape ex2 200
